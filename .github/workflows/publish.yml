@@ -28,8 +28,14 @@ jobs:
         java --version
         bash make/build.sh
     
+    # - name: 'Publish JTReg'
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: jtreg-${{ github.head_ref }}.${{ github.sha }}
+    #     path: build/images/jtreg.zip
     - name: 'Publish JTReg'
-      uses: actions/upload-artifact@v3
+      uses: Shopify/upload-to-release@v1
       with:
         name: jtreg-${{ github.head_ref }}.${{ github.sha }}
         path: build/images/jtreg.zip
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
