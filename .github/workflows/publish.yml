@@ -1,0 +1,36 @@
+name: Build and Publish JTReg
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - pr/*
+
+jobs:
+
+  linux-x64:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 'Check out repository'
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: 'Set up Java Development Kit'
+      uses: oracle-actions/setup-java@v1
+      with:
+        website: oracle.com
+        release: 17
+
+    - name: 'Build JTReg'
+      shell: bash
+      run: |
+        java --version
+        bash make/build.sh
+    
+    - name: 'Publish JTReg'
+      uses: actions/upload-artifact@v3
+      with:
+        name: jtreg-${{ github.head_ref }}.${{ github.sha }}
+        path: build/images/jtreg.zip
