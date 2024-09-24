@@ -1,9 +1,6 @@
 name: Build and Publish JTReg
 
-on:
-  push:
-    branches:
-      - master
+on: release
 
 jobs:
 
@@ -28,14 +25,17 @@ jobs:
         java --version
         bash make/build.sh
     
-    # - name: 'Publish JTReg'
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: jtreg-${{ github.head_ref }}.${{ github.sha }}
-    #     path: build/images/jtreg.zip
+    - name: 'Artifact JTReg'
+      uses: actions/upload-artifact@v3
+      with:
+        name: jtreg-${{ github.head_ref }}.${{ github.sha }}
+        path: build/images/jtreg.zip
+
     - name: 'Publish JTReg'
       uses: Shopify/upload-to-release@v2.0.0
       with:
         name: jtreg-${{ github.head_ref }}.${{ github.sha }}
         path: build/images/jtreg.zip
         repo-token: ${{ secrets.MY_TOKEN }}
+        tag-name: ${{ github.head_ref }}
+        tag-message: 'Release $GITHUB_HEAD_REF'
