@@ -38,4 +38,4 @@ jobs:
       with:
         name: jtreg-${{ github.head_ref }}.${{ github.sha }}
         path: build/images/jtreg.zip
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token: ${{ secrets.MY_TOKEN }}
