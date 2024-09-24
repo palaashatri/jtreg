@@ -34,7 +34,7 @@ jobs:
     #     name: jtreg-${{ github.head_ref }}.${{ github.sha }}
     #     path: build/images/jtreg.zip
     - name: 'Publish JTReg'
-      uses: Shopify/upload-to-release@v1
+      uses: Shopify/upload-to-release@v2.0.0
       with:
         name: jtreg-${{ github.head_ref }}.${{ github.sha }}
         path: build/images/jtreg.zip
