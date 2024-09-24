@@ -2,9 +2,8 @@ name: Build and Publish JTReg
 
 on:
   push:
-    branches-ignore:
+    branches:
       - master
-      - pr/*
 
 jobs:
 
