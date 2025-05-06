@@ -26,6 +26,6 @@ jobs:
       - name: Upload JAR to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: build/images/jtreg
+          files: build/images/jtreg.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

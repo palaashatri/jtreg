@@ -27,4 +27,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jtreg.jar
-          path: build/images/jtreg
+          path: build/images/jtreg.zip
