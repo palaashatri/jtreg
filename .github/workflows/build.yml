@@ -1,0 +1,30 @@
+name: Build JTReg JAR (Artifact)
+
+on:
+  push:
+    branches:
+      - master  # or your main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Apache Ant
+        run: sudo apt-get update && sudo apt-get install -y ant
+
+      - name: Build jtreg using Ant
+        run: bash make/build.sh
+
+      - name: Upload JAR as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jtreg.jar
+          path: build/images/jtreg
