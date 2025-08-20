@@ -1,6 +1,31 @@
-## [Unreleased](https://git.openjdk.org/jtreg/compare/jtreg-7.5.1+1...master)
+## [Unreleased](https://git.openjdk.org/jtreg/compare/jtreg-8+2...master)
 
 _nothing noteworthy, yet_
+
+## [8](https://git.openjdk.org/jtreg/compare/jtreg-7.5.2+1...jtreg-8+2)
+
+* Require JDK 17 to build `jtreg` tool. [CODETOOLS-7904000](https://bugs.openjdk.org/browse/CODETOOLS-7904000)
+
+* Update bundled dependencies:
+  * AsmTools 8.1 [CODETOOLS-7903081](https://bugs.openjdk.org/browse/CODETOOLS-7903081)
+  * JUnit 5.13.3 [CODETOOLS-7904055](https://bugs.openjdk.org/browse/CODETOOLS-7904055)
+
+* Fix `--verify-exclude` to abort test runs when discovering failures [CODETOOLS-7904015](https://bugs.openjdk.org/browse/CODETOOLS-7904015)
+
+* Fix to use default charset when reading group files [CODETOOLS-7904021](https://bugs.openjdk.org/browse/CODETOOLS-7904021)
+
+## [7.5.2](https://git.openjdk.org/jtreg/compare/jtreg-7.5.1+1...jtreg-7.5.2+1)
+
+* Support `${test.main.class}` for Java source files in smart arguments [CODETOOLS-7903981](https://bugs.openjdk.org/browse/CODETOOLS-7903981)
+
+* Make default timeout seconds configurable [CODETOOLS-7903961](https://bugs.openjdk.org/browse/CODETOOLS-7903961)
+
+* Restore propagation of preview flag into library code [CODETOOLS-7903971](https://bugs.openjdk.org/browse/CODETOOLS-7903971)
+
+* Add support for `.jasm` and `.jcod` file in patched modules [CODETOOLS-7903955](https://bugs.openjdk.org/browse/CODETOOLS-7903955)
+
+* Use scratch directory for JUnit's `@TempDir` annotation by default [CODETOOLS-7903953](https://bugs.openjdk.org/browse/CODETOOLS-7903953)
+
 
 ## [7.5.1](https://git.openjdk.org/jtreg/compare/jtreg-7.5+1...jtreg-7.5.1+1)
 

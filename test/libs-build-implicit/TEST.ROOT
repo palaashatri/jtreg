@@ -1,12 +1,10 @@
 #
-# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,9 +20,3 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-
-DEFAULT_ASMTOOLS_SRC_TAG=8.1
-DEFAULT_ASMTOOLS_SRC_ARCHIVE_CHECKSUM=6dcd98e53131bc923df5fdd10baa42c601f1c97c
-
-DEFAULT_ANT_VERSION=1.10.15
-DEFAULT_ANT_ARCHIVE_CHECKSUM=1b460a543caf0b2087fef210c7b4813909901fdc
