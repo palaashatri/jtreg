@@ -1816,7 +1816,7 @@ public class Tool {
             }
 
             if (nativeDirArg != null)
-                rp.setNativeDir(nativeDirArg);
+                rp.setNativeDir(nativeDirArg.toAbsolutePath());
 
             rp.setUseWindowsSubsystemForLinux(useWindowsSubsystemForLinux);
 
@@ -2460,7 +2460,8 @@ public class Tool {
             "PRINTER",
             "TZ",
             "WAYLAND_DISPLAY",
-            "XMODIFIERS"
+            "XMODIFIERS",
+            "XAUTHORITY"
     };
 
     private static final String[] DEFAULT_WINDOWS_ENV_VARS = {

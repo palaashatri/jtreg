@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -49,6 +50,7 @@ import org.testng.TestNG;
 import org.testng.TestNGException;
 import org.testng.reporters.XMLReporter;
 
+import static com.sun.javatest.regtest.agent.Utils.HOUR_MIN_SEC_MS_FORMAT;
 import static org.testng.ITestResult.FAILURE;
 import static org.testng.ITestResult.SKIP;
 import static org.testng.ITestResult.SUCCESS;
@@ -141,31 +143,35 @@ public class TestNGRunner implements MainActionHelper.TestRunner {
 
         @Override
         public void onTestSuccess(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             successCount.incrementAndGet();
-            report(InfoKind.TEST, itr);
+            report(now, InfoKind.TEST, itr);
         }
 
         @Override
         public void onTestFailure(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             failureCount.incrementAndGet();
-            report(InfoKind.TEST, itr);
+            report(now, InfoKind.TEST, itr);
         }
 
         @Override
         public void onTestSkipped(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             Throwable t = itr.getThrowable();
             if (t != null && !(t instanceof SkipException)) {
                 onTestFailure(itr);
                 return;
             }
             skippedCount.incrementAndGet();
-            report(InfoKind.TEST, itr);
+            report(now, InfoKind.TEST, itr);
         }
 
         @Override
         public void onTestFailedButWithinSuccessPercentage(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             failedButWithinSuccessPercentageCount.incrementAndGet();
-            report(InfoKind.TEST, itr);
+            report(now, InfoKind.TEST, itr);
         }
 
         @Override
@@ -178,23 +184,26 @@ public class TestNGRunner implements MainActionHelper.TestRunner {
 
         @Override
         public void onConfigurationSuccess(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             configSuccessCount.incrementAndGet();
-            report(InfoKind.CONFIG, itr);
+            report(now, InfoKind.CONFIG, itr);
         }
 
         @Override
         public void onConfigurationFailure(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             configFailureCount.incrementAndGet();
-            report(InfoKind.CONFIG, itr);
+            report(now, InfoKind.CONFIG, itr);
         }
 
         @Override
         public void onConfigurationSkip(ITestResult itr) {
+            ZonedDateTime now = ZonedDateTime.now();
             configSkippedCount.incrementAndGet();
-            report(InfoKind.CONFIG, itr);
+            report(now, InfoKind.CONFIG, itr);
         }
 
-        void report(InfoKind k, ITestResult itr) {
+        void report(ZonedDateTime reportedAt, InfoKind k, ITestResult itr) {
             Throwable t = itr.getThrowable();
             String suffix;
             if (t != null  && itr.getStatus() != SUCCESS) {
@@ -214,7 +223,8 @@ public class TestNGRunner implements MainActionHelper.TestRunner {
                     ? Duration.ZERO
                     : Duration.ofNanos(System.nanoTime() - startNanos);
             long durationMillis = duration.toMillis();
-            System.out.print(k.toString().toLowerCase()
+            System.out.print("[" + reportedAt.format(HOUR_MIN_SEC_MS_FORMAT) + "]"
+                    + " " + k.toString().toLowerCase()
                     + " " + itr.getMethod().getConstructorOrMethod().getDeclaringClass().getName()
                     + "." + itr.getMethod().getMethodName()
                     + formatParams(itr)

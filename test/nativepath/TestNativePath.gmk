@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 
 NATIVEPATH := $(call FullPath, $(shell cd $(BUILDDIR); pwd))
+ABS_TESTDIR := $(call FullPath, $(TESTDIR))
 
 $(BUILDTESTDIR)/TestNativePath.agentvm.ok \
 $(BUILDTESTDIR)/TestNativePath.othervm.ok: \
@@ -38,16 +39,16 @@ $(BUILDTESTDIR)/TestNativePath.othervm.ok: \
 		-jdk:$(JDKHOME) \
 		-nativepath:$(NATIVEPATH) \
 		-vmoption:-Dcorrect.nativepath=$(NATIVEPATH) \
-		-w:$(BUILDTESTDIR)/nativepath.othervm/work \
-		-r:$(BUILDTESTDIR)/nativepath.othervm/report \
+		-w:$(@:%.ok=%nativepath.othervm)/work \
+		-r:$(@:%.ok=%nativepath.othervm)/report \
 		-verbose:fail \
 		$(@:$(BUILDTESTDIR)/TestNativePath.%.ok=-%) \
 		$(TESTDIR)/nativepath/NativesOK.java
 
 	$(JTREG_IMAGEDIR)/bin/jtreg $(JTREG_OPTS) \
 		-jdk:$(JDKHOME) \
-		-w:$(BUILDTESTDIR)/nativepath.othervm2/work \
-		-r:$(BUILDTESTDIR)/nativepath.othervm2/report \
+		-w:$(@:%.ok=%nativepath.othervm2)/work \
+		-r:$(@:%.ok=%nativepath.othervm2)/report \
 		-verbose:fail \
 		$(@:$(BUILDTESTDIR)/TestNativePath.%.ok=-%) \
 		$(TESTDIR)/nativepath/NativesEmpty.java
@@ -82,8 +83,8 @@ $(BUILDTESTDIR)/TestNativePath.ok: \
         # should yield an error
 	$(JTREG_IMAGEDIR)/bin/jtreg $(JTREG_OPTS) \
 		-jdk:$(JDKHOME) \
-		-w:$(BUILDTESTDIR)/nativepath.othervm2/work \
-		-r:$(BUILDTESTDIR)/nativepath.othervm2/report \
+		-w:$(@:%.ok=%nativepath.othervm2)/work \
+		-r:$(@:%.ok=%nativepath.othervm2)/report \
 		-verbose:fail \
 		$(TESTDIR)/nativepath/NativesOK.java \
 		2>&1 | grep -q "Use -nativepath to specify the location of native code"
@@ -91,8 +92,8 @@ $(BUILDTESTDIR)/TestNativePath.ok: \
         # Exclude all tests with native code
 	$(JTREG_IMAGEDIR)/bin/jtreg $(JTREG_OPTS) \
 		-jdk:$(JDKHOME) \
-		-w:$(BUILDTESTDIR)/nativepath.othervm2/work \
-		-r:$(BUILDTESTDIR)/nativepath.othervm2/report \
+		-w:$(@:%.ok=%nativepath.othervm2)/work \
+		-r:$(@:%.ok=%nativepath.othervm2)/report \
                 -k:!native \
 		-verbose:fail \
 		$(TESTDIR)/nativepath/NativesOK.java \
@@ -103,28 +104,49 @@ $(BUILDTESTDIR)/TestNativePath.ok: \
 		-jdk:$(JDKHOME) \
 		-nativepath:$(NATIVEPATH) \
 		-e:CORRECTNATIVEPATH=$(NATIVEPATH) \
-		-w:$(BUILDTESTDIR)/nativepath.shell/work \
-		-r:$(BUILDTESTDIR)/nativepath.shell/report \
+		-w:$(@:%.ok=%nativepath.shell)/work \
+		-r:$(@:%.ok=%nativepath.shell)/report \
 		-verbose:fail \
 		$(TESTDIR)/nativepath/NativesOKShell.sh
 
 	$(JTREG_IMAGEDIR)/bin/jtreg $(JTREG_OPTS) \
 		-jdk:$(JDKHOME) \
-		-w:$(BUILDTESTDIR)/nativepath.shell/work \
-		-r:$(BUILDTESTDIR)/nativepath.shell/report \
+		-w:$(@:%.ok=%nativepath.shell)/work \
+		-r:$(@:%.ok=%nativepath.shell)/report \
 		-verbose:fail \
 		$(TESTDIR)/nativepath/NativesEmptyShell.sh
 
 	echo "$@ test passed at `date`" > $@
 
+# verify that a relative path value to -nativepath option
+# is correctly resolved to an absolute path by jtreg at runtime
+$(BUILDTESTDIR)/TestRelativeNativePath.ok: \
+                $(JTREG_IMAGEDIR)/lib/javatest.jar \
+		$(JTREG_IMAGEDIR)/lib/jtreg.jar \
+		$(JTREG_IMAGEDIR)/bin/jtreg
+
+	$(RM)  $(@:%.ok=%nativepath.relative)
+	$(MKDIR) $(@:%.ok=%nativepath.relative)/foobar/hello/world
+
+	cd $(BUILDTESTDIR); $(JTREG_IMAGEDIR)/bin/jtreg $(JTREG_OPTS) \
+		-jdk:$(JDKHOME) \
+		-nativepath:$(@:$(BUILDTESTDIR)/%.ok=%nativepath.relative)/foobar/hello/world \
+		-vmoption:-Dcorrect.nativepath=$(@:%.ok=%nativepath.relative)/foobar/hello/world \
+		-w:$(@:%.ok=%nativepath.relative)/work \
+		-r:$(@:%.ok=%nativepath.relative)/report \
+		-verbose:fail \
+		$(ABS_TESTDIR)/nativepath/NativesOK.java
+
+	echo "$@ test passed at `date`" > $@
 
 TESTS.jtreg += \
     $(BUILDTESTDIR)/TestNativePath.ok \
     $(BUILDTESTDIR)/TestNativePath.agentvm.ok \
-    $(BUILDTESTDIR)/TestNativePath.othervm.ok
+    $(BUILDTESTDIR)/TestNativePath.othervm.ok \
+    $(BUILDTESTDIR)/TestRelativeNativePath.ok
 
 testnativepath: \
     $(BUILDTESTDIR)/TestNativePath.ok \
     $(BUILDTESTDIR)/TestNativePath.agentvm.ok \
-    $(BUILDTESTDIR)/TestNativePath.othervm.ok
-
+    $(BUILDTESTDIR)/TestNativePath.othervm.ok \
+    $(BUILDTESTDIR)/TestRelativeNativePath.ok

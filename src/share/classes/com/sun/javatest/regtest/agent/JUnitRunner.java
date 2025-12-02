@@ -55,11 +55,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static com.sun.javatest.regtest.agent.Utils.HOUR_MIN_SEC_MS_FORMAT;
 
 /**
  * TestRunner to run JUnit tests.
@@ -67,8 +72,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class JUnitRunner implements MainActionHelper.TestRunner {
     // error message for when "NoClassDefFoundError" are raised accessing JUnit classes
     private static final String JUNIT_NO_DRIVER = "No JUnit driver -- install JUnit JAR file(s) next to jtreg.jar";
-    // this is a temporary flag while transitioning from JUnit 4 to 5
-    private static final boolean JUNIT_RUN_WITH_JUNIT_4 = Flags.get("runWithJUnit4");
 
     private static final String JUNIT_SELECT_PREFIX = "junit-select:";
 
@@ -104,34 +107,7 @@ public class JUnitRunner implements MainActionHelper.TestRunner {
             cl = JUnitRunner.class.getClassLoader();
         }
         Class<?> mainClass = Class.forName(className, false, cl);
-        if (JUNIT_RUN_WITH_JUNIT_4) {
-            runWithJUnit4(mainClass);
-        } else {
-            runWithJUnitPlatform(mainClass);
-        }
-    }
-
-    private static void runWithJUnit4(Class<?> mainClass) throws Exception {
-        org.junit.runner.Result result;
-        try {
-            result = org.junit.runner.JUnitCore.runClasses(mainClass);
-        } catch (NoClassDefFoundError ex) {
-            throw new Exception(JUNIT_NO_DRIVER, ex);
-        }
-        if (!result.wasSuccessful()) {
-            for (org.junit.runner.notification.Failure failure : result.getFailures()) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                try {
-                    pw.println("JavaTest Message: JUnit Failure: " + failure);
-                    failure.getException().printStackTrace(pw);
-                } finally {
-                    pw.close();
-                }
-                System.err.println(sw.toString());
-            }
-            throw new Exception("JUnit test failure");
-        }
+        runWithJUnitPlatform(mainClass);
     }
 
     private static void runWithJUnitPlatform(Class<?> mainClass) throws Exception {
@@ -162,6 +138,7 @@ public class JUnitRunner implements MainActionHelper.TestRunner {
             SummaryGeneratingListener summaryGeneratingListener = new SummaryGeneratingListener();
 
             AgentVerbose verbose = AgentVerbose.ofStringRepresentation(System.getProperty("test.verbose"));
+            Logger.getLogger("org.junit").setLevel(Level.WARNING);
 
             LauncherConfig launcherConfig = LauncherConfig.builder()
                 .addTestExecutionListeners(new PrintingListener(System.err, verbose))
@@ -232,14 +209,16 @@ public class JUnitRunner implements MainActionHelper.TestRunner {
 
         @Override
         public void executionSkipped(TestIdentifier identifier, String reason) {
+            ZonedDateTime now = ZonedDateTime.now();
             if (verbose.passMode == AgentVerbose.Mode.NONE) return;
             if (identifier.isTest()) {
+                String skippedTime = now.format(HOUR_MIN_SEC_MS_FORMAT);
                 String status = "SKIPPED";
                 String source = toSourceString(identifier);
                 String name = identifier.getDisplayName();
                 lock.lock();
                 try {
-                    printer.printf("%-10s %s '%s' %s%n", status, source, name, reason);
+                    printer.printf("[%s] %-10s %s '%s' %s%n", skippedTime, status, source, name, reason);
                 }
                 finally {
                     lock.unlock();
@@ -249,15 +228,17 @@ public class JUnitRunner implements MainActionHelper.TestRunner {
 
         @Override
         public void executionStarted(TestIdentifier identifier) {
+            ZonedDateTime now = ZonedDateTime.now();
             startNanosByUniqueId.put(identifier.getUniqueIdObject(), System.nanoTime());
             if (verbose.passMode == AgentVerbose.Mode.NONE) return;
             if (identifier.isTest()) {
+                String startTime = now.format(HOUR_MIN_SEC_MS_FORMAT);
                 String status = "STARTED";
                 String source = toSourceString(identifier);
                 String name = identifier.getDisplayName();
                 lock.lock();
                 try {
-                    printer.printf("%-10s %s '%s'%n", status, source, name);
+                    printer.printf("[%s] %-10s %s '%s'%n", startTime, status, source, name);
                 }
                 finally {
                     lock.unlock();
@@ -267,6 +248,7 @@ public class JUnitRunner implements MainActionHelper.TestRunner {
 
         @Override
         public void executionFinished(TestIdentifier identifier, TestExecutionResult result) {
+            ZonedDateTime now = ZonedDateTime.now();
             TestExecutionResult.Status status = result.getStatus();
             if (status == TestExecutionResult.Status.SUCCESSFUL) {
                 if (verbose.passMode == AgentVerbose.Mode.NONE) return;
@@ -284,10 +266,11 @@ public class JUnitRunner implements MainActionHelper.TestRunner {
                     result.getThrowable().ifPresent(throwable -> throwable.printStackTrace(printer));
                 }
                 if (identifier.isTest()) {
+                    String finishedTime = now.format(HOUR_MIN_SEC_MS_FORMAT);
                     String source = toSourceString(identifier);
                     String name = identifier.getDisplayName();
                     long millis = duration.toMillis();
-                    printer.printf("%-10s %s '%s' [%dms]%n", status, source, name, millis);
+                    printer.printf("[%s] %-10s %s '%s' [%dms]%n", finishedTime, status, source, name, millis);
                 }
             }
             finally {

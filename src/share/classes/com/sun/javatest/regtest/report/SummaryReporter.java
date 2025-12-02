@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,13 +74,6 @@ public abstract class SummaryReporter {
     }
 
     /**
-     * Returns {@code true} if there is no content to be shown.
-     *
-     * @return {@code true} if there is no content to be shown
-     */
-    public abstract boolean isEmpty();
-
-    /**
      * Adds the results for an action in a test.
      *
      * @param tr the test result for the test
@@ -91,10 +84,11 @@ public abstract class SummaryReporter {
     /**
      * Writes a summary report about the tests that executed.
      *
+     * @return the sum of executed test counts
      * @param reportDir the directory in which to write the report
      * @throws IOException if there is a problem writing the report
      */
-    public abstract void writeReport(File reportDir) throws IOException;
+    abstract int writeReport(File reportDir) throws IOException;
 
     /**
      * A summary reporter that aggregates info for TestNG tests, using info written
@@ -104,13 +98,8 @@ public abstract class SummaryReporter {
 
         private final Map<String, Info> infoMap = new TreeMap<>();
 
-        @Override
-        public boolean isEmpty() {
-            return infoMap.isEmpty();
-        }
-
         static final String testsPrefix = "Total tests run:";
-        static final Pattern testsPattern = Pattern.compile("[^0-9]+([0-9]+)[^0-9]+([0-9]+)[^0-9]+([0-9]+)[^0-9]*");
+        static final Pattern testsPattern = Pattern.compile("Total tests run: ([0-9]+), Passes: ([0-9]+), Failures: ([0-9]+), Skips: ([0-9]+)");
         static final String configPrefix = "Configuration Failures:";
         static final Pattern configPattern = Pattern.compile("[^0-9]+([0-9]+)[^0-9]+([0-9]+)[^0-9]*");
 
@@ -121,16 +110,15 @@ public abstract class SummaryReporter {
                 String group = td.getParameter("packageRoot");
                 if (group == null)
                     group = td.getRootRelativePath();
-                Info info = infoMap.get(group);
-                if (info == null)
-                    infoMap.put(group, info = new Info());
+                Info info = infoMap.computeIfAbsent(group, __ -> new Info());
                 String out = s.getOutput(OutputKind.STDOUT.name);
                 if (out != null) {
                     Matcher tm = getMatcher(out, testsPrefix, testsPattern);
                     if (tm != null && tm.matches()) {
                         info.count += Integer.parseInt(tm.group(1));
-                        info.failureCount += Integer.parseInt(tm.group(2));
-                        info.skippedCount += Integer.parseInt(tm.group(3));
+                        // info.successCount += Integer.parseInt(tm.group(2));
+                        info.failureCount += Integer.parseInt(tm.group(3));
+                        info.skippedCount += Integer.parseInt(tm.group(4));
                     }
                     Matcher cm = getMatcher(out, configPrefix, configPattern);
                     if (cm != null && cm.matches()) {
@@ -152,19 +140,24 @@ public abstract class SummaryReporter {
             if (endPos == -1)
                 return null;
 
-            return p.matcher(out.substring(pos, endPos));
+            return p.matcher(out.substring(pos, endPos).strip()); // get rid of any "\r", too
         }
 
         @Override
-        public void writeReport(File reportDir) throws IOException {
+        int writeReport(File reportDir) throws IOException {
+            if (infoMap.isEmpty()) return 0;
             File reportTextDir = new File(reportDir, "text");
             reportTextDir.mkdirs();
             File f = new File(reportTextDir, "testng.txt");
+            int sum = 0;
             try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)))) {
                 for (Map.Entry<String, Info> e : infoMap.entrySet()) {
-                    out.println(e.getKey() + " " + e.getValue());
+                    Info info = e.getValue();
+                    out.println(e.getKey() + " " + info);
+                    sum += info.count;
                 }
             }
+            return sum;
         }
 
         static class Info {
@@ -194,11 +187,6 @@ public abstract class SummaryReporter {
     private static class JUnitSummaryReporter extends SummaryReporter {
 
         private final Map<String, Info> infoMap = new TreeMap<>();
-
-        @Override
-        public boolean isEmpty() {
-            return infoMap.isEmpty();
-        }
 
         static final Pattern infoPattern = Pattern.compile("(?s)\\[ JUnit Containers:.*JUnit Tests:.*]");
         static final Pattern numberPattern = Pattern.compile("[0-9]+");
@@ -241,15 +229,20 @@ public abstract class SummaryReporter {
         }
 
         @Override
-        public void writeReport(File reportDir) throws IOException {
+        int writeReport(File reportDir) throws IOException {
+            if (infoMap.isEmpty()) return 0;
             File reportTextDir = new File(reportDir, "text");
             reportTextDir.mkdirs();
             File f = new File(reportTextDir, "junit.txt");
+            int sum = 0;
             try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)))) {
                 for (Map.Entry<String, Info> e: infoMap.entrySet()) {
-                    out.println(e.getKey() + " " + e.getValue());
+                    Info info = e.getValue();
+                    out.println(e.getKey() + " " + info);
+                    sum += info.tests.count;
                 }
             }
+            return sum;
         }
 
         static class Counts {

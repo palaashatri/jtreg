@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@ package com.sun.javatest.regtest;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
 
 import com.sun.javatest.regtest.agent.Alarm;
+import static com.sun.javatest.regtest.agent.Utils.HOUR_MIN_SEC_MS_FORMAT;
 
 /**
  * Abstract superclass for timeout handlers.
@@ -113,18 +113,9 @@ public abstract class TimeoutHandler {
      */
     public final void handleTimeout(Process proc) {
         log.println("Timeout information:");
-        long pid = 0;
-        try {
-            pid = getProcessId(proc);
-        } catch(Exception ex) {
-            ex.printStackTrace(log);
-        }
-        if (pid == 0) {
-            log.println("Could not find process id for the process that timed out.");
-            log.println("Skipping timeout handling.");
-            return;
-        }
-
+        final String startedAt = HOUR_MIN_SEC_MS_FORMAT.format(ZonedDateTime.now());
+        log.println("[" + startedAt + "] starting timeout handler action(s)");
+        final long pid = proc.pid();
         Alarm a = (timeout <= 0)
                 ? Alarm.NONE
                 : Alarm.scheduleInterrupt(timeout, TimeUnit.SECONDS, log, Thread.currentThread());
@@ -135,6 +126,8 @@ public abstract class TimeoutHandler {
             log.println("Timeout handler interrupted: ");
             ex.printStackTrace(log);
         } finally {
+            final String endedAt = HOUR_MIN_SEC_MS_FORMAT.format(ZonedDateTime.now());
+            log.println("[" + endedAt + "] timeout handler action(s) completed");
             a.cancel();
         }
 
@@ -149,42 +142,4 @@ public abstract class TimeoutHandler {
      * @throws InterruptedException if the actions exceed the specified timeout
      */
     protected abstract void runActions(Process process, long pid) throws InterruptedException;
-
-    /**
-     * Gets the process id of the specified process.
-     *
-     * @param proc the process
-     * @return The process id, or 0 if the process id cannot be found
-     */
-    protected long getProcessId(Process proc) {
-        try {
-            try {
-                Method pid = Process.class.getMethod("pid");
-                return (Long) pid.invoke(proc);
-            } catch (NoSuchMethodException ignore) {
-                // This exception is expected on pre-JDK 9,
-                // try a fallback method that only works on Unix platforms
-                return getProcessIdPreJdk9(proc);
-            }
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static long getProcessIdPreJdk9(Process proc)
-            throws IllegalAccessException, NoSuchFieldException {
-        if (proc.getClass().getName().equals("java.lang.UNIXProcess")) {
-            int pid;
-            Field f = proc.getClass().getDeclaredField("pid");
-            boolean oldValue = f.isAccessible();
-            try {
-                f.setAccessible(true);
-                pid = f.getInt(proc);
-            } finally {
-                f.setAccessible(oldValue);
-            }
-            return pid;
-        }
-        return 0;
-    }
 }
